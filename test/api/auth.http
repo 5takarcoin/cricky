@@ -1,0 +1,21 @@
+### Health
+GET http://localhost:3000/
+
+### Register
+POST http://localhost:3000/auth/register
+Content-Type: application/json
+
+{
+  "username": "batmannow",
+  "password": "password123",
+  "role": "player"
+}
+
+### Login
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+  "username": "batmannow",
+  "password": "password123"
+}

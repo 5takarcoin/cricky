@@ -1,0 +1,27 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# environment variables — never commit these
+.env
+.env.local
+.env.development
+.env.production
+
+# drizzle studio
+.drizzle/
+
+# logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store        # mac
+Thumbs.db        # windows
+
+# editor
+.vscode/
+.idea/
