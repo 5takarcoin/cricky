@@ -3,6 +3,7 @@ import { db } from "./db/db.js";
 import cookieParser from "cookie-parser";
 import { sql } from 'drizzle-orm';
 import authRoutes from './routes/authRoutes.js';
+import playerRoutes from './routes/playerRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 4242;
@@ -20,6 +21,7 @@ app.get('/', async (req, res) => {
 });
 
 app.use('/auth', authRoutes);
+app.use('/players', playerRoutes);
 
 app.listen(PORT, () => {
   console.log(`Listening to http://localhost:${PORT}`);

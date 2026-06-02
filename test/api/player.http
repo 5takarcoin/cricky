@@ -1,0 +1,27 @@
+### Create player profile
+POST {{baseUrl}}players/me
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Batman",
+  "role": "bat",
+  "batHand": "right",
+  "bio": "Opening batsman"
+}
+
+### Get my profile
+GET {{baseUrl}}players/me
+Authorization: Bearer {{accessToken}}
+
+### Get player by id
+GET {{baseUrl}}players/1
+
+### Update my profile
+PUT {{baseUrl}}players/me
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "bio": "Updated bio yay mcq"
+}

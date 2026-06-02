@@ -1,8 +1,8 @@
 ### Health
-GET http://localhost:3000/
+GET {{baseUrl}}
 
 ### Register
-POST http://localhost:3000/auth/register
+POST {{baseUrl}}auth/register
 Content-Type: application/json
 
 {
@@ -12,7 +12,7 @@ Content-Type: application/json
 }
 
 ### Login
-POST http://localhost:3000/auth/login
+POST {{baseUrl}}auth/login
 Content-Type: application/json
 
 {
