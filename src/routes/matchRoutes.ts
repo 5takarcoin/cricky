@@ -167,7 +167,7 @@ router.put('/:id/status',
         ended:     [],
       };
 
-      if (!validTransitions[match.status].includes(status)) {
+      if (!validTransitions[match.status ?? '' as string]?.includes(status)) {
         res.status(400).json({
           error: `Cannot transition from ${match.status} to ${status}`
         });
@@ -182,7 +182,7 @@ router.put('/:id/status',
 
       res.json({
         message: status === 'live' ? 'Match is now live' : 'Match ended',
-        status:  updated.status,
+        status:  updated?.status ?? match.status,
       });
     } catch (err) {
       console.error(err);
@@ -195,7 +195,7 @@ router.put('/:id/status',
 router.put('/:id/result',
   requireAuth,
   validate(updateResultSchema),
-  async (req: Request, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
       const matchId    = Number(req.params.id);
       const { result } = req.body;
@@ -272,17 +272,17 @@ router.get('/:id/summary',
 
         // current batsmen = striker + non striker of last delivery
         const [striker]    = await db.select({ id: players.id, name: players.name })
-          .from(players).where(eq(players.id, lastDel?.strikerId));
+          .from(players).where(eq(players.id, lastDel?.strikerId ?? 0 as number));
         const [nonStriker] = await db.select({ id: players.id, name: players.name })
-          .from(players).where(eq(players.id, lastDel?.nonStrikerId));
+          .from(players).where(eq(players.id, lastDel?.nonStrikerId ?? 0 as number));
         const [bowler]     = await db.select({ id: players.id, name: players.name })
-          .from(players).where(eq(players.id, lastDel?.bowlerId));
+          .from(players).where(eq(players.id, lastDel?.bowlerId ?? 0 as number));
 
         // current bowler stats this spell
         const bowlerDels   = dels.filter(d => d.inning === currentInning && d.bowlerId === lastDel?.bowlerId);
         const bowlerRuns   = bowlerDels.reduce((sum, d) => sum + d.runsFromBat + d.extraRuns, 0);
         const bowlerBalls  = bowlerDels.filter(d => d.isLegalBall).length;
-        const bowlerWickets = bowlerDels.filter(d => d.isWicket).length;
+        const bowlerWickets = bowlerDels.filter(d => d.wicketType !== null).length;
 
         // current striker stats
         const strikerDels  = dels.filter(d => d.inning === currentInning && d.strikerId === lastDel?.strikerId);

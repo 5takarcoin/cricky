@@ -73,7 +73,11 @@ router.post('/tournaments/:id/fixtures/generate',
       const pairs: { team1Id: number; team2Id: number }[] = [];
       for (let i = 0; i < teamIds.length; i++) {
         for (let j = i + 1; j < teamIds.length; j++) {
-          pairs.push({ team1Id: teamIds[i], team2Id: teamIds[j] });
+          if (teamIds[i] === undefined || teamIds[j] === undefined) continue; // eslint-disable-line
+            const team1Id = teamIds[i];
+            const team2Id = teamIds[j];
+            if (team1Id === undefined || team2Id === undefined) continue;
+            pairs.push({ team1Id, team2Id });
         }
       }
 
@@ -89,10 +93,19 @@ router.post('/tournaments/:id/fixtures/generate',
           scheduledAt.setDate(scheduledAt.getDate() + dayOffset);
           scheduledAt.setHours(10 + matchOnDay * 4); // 10am, 2pm, 6pm etc
 
+          const pair = pairs[i];
+          if (!pair) continue;
           const [match] = await tx
             .insert(matches)
-            .values({ tournamentId, ...pairs[i], scheduledAt })
+            .values({
+              tournamentId,
+              team1Id: pair.team1Id,
+              team2Id: pair.team2Id,
+              scheduledAt,
+            })
             .returning();
+
+          if (!match) throw new Error('Insert did not return match');
 
           await tx.insert(fixtures).values({
             tournamentId,
@@ -131,6 +144,7 @@ router.get('/tournaments/:id/fixtures',
       // attach team names to each fixture
       const enriched = await Promise.all(allFixtures.map(async (f) => {
         const [match] = await db.select().from(matches).where(eq(matches.id, f.matchId));
+        if (!match) return null;
         const [team1] = await db.select({ id: teams.id, name: teams.name }).from(teams).where(eq(teams.id, match.team1Id));
         const [team2] = await db.select({ id: teams.id, name: teams.name }).from(teams).where(eq(teams.id, match.team2Id));
         return { ...f, team1, team2, status: match.status, result: match.result };
@@ -148,7 +162,7 @@ router.get('/tournaments/:id/fixtures',
 router.put('/fixtures/:id',
   requireAuth,
   validate(updateFixtureSchema),
-  async (req: Request, res: Response) => {
+  async (req: AuthenticatedRequest, res: Response) => {
     try {
       const fixtureId = Number(req.params.id);
       const player    = await getPlayer(req.user!.id);
