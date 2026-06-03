@@ -1,0 +1,64 @@
+### Auto generate round robin fixtures
+POST {{baseUrl}}/tournaments/1/fixtures/generate
+Content-Type: application/json
+
+{
+  "startDate": "2026-06-10T10:00:00Z",
+  "matchesPerDay": 2
+}
+
+### Expected response
+# {
+#   "message": "6 matches generated",
+#   "matches": [
+#     { "id": 1, "team1": "Tigers", "team2": "Lions",    "scheduledAt": "2026-06-10T10:00:00Z" },
+#     { "id": 2, "team1": "Tigers", "team2": "Sharks",   "scheduledAt": "2026-06-10T14:00:00Z" },
+#     { "id": 3, "team1": "Tigers", "team2": "Eagles",   "scheduledAt": "2026-06-11T10:00:00Z" },
+#     { "id": 4, "team1": "Lions",  "team2": "Sharks",   "scheduledAt": "2026-06-11T14:00:00Z" },
+#     { "id": 5, "team1": "Lions",  "team2": "Eagles",   "scheduledAt": "2026-06-12T10:00:00Z" },
+#     { "id": 6, "team1": "Sharks", "team2": "Eagles",   "scheduledAt": "2026-06-12T14:00:00Z" }
+#   ]
+# }
+
+###
+
+### Get all fixtures in tournament
+GET {{baseUrl}}/tournaments/1/fixtures
+
+### Expected response
+# [
+#   {
+#     "id": 1,
+#     "scheduledAt": "2026-06-10T10:00:00Z",
+#     "status": "scheduled",
+#     "team1": { "id": 1, "name": "Tigers" },
+#     "team2": { "id": 2, "name": "Lions" },
+#     "result": "pending"
+#   },
+#   {
+#     "id": 2,
+#     "scheduledAt": "2026-06-10T14:00:00Z",
+#     "status": "ended",
+#     "team1": { "id": 1, "name": "Tigers" },
+#     "team2": { "id": 3, "name": "Sharks" },
+#     "result": "team1_win"
+#   }
+# ]
+
+###
+
+### Update fixture schedule (reschedule)
+PUT {{baseUrl}}/fixtures/1
+Content-Type: application/json
+
+{
+  "scheduledAt": "2026-06-11T10:00:00Z",
+  "venue": "Chittagong Stadium"
+}
+
+### Expected response
+# {
+#   "id": 1,
+#   "scheduledAt": "2026-06-11T10:00:00Z",
+#   "venue": "Chittagong Stadium"
+# }

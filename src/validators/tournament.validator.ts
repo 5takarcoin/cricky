@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import * as z from "zod";
 
 export const createTournamentSchema = z.object({
   name:        z.string().min(2).max(100),

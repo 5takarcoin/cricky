@@ -13,6 +13,12 @@ export const matchResultEnum = pgEnum('match_result', [
   'pending',
 ]);
 
+export const matchStatusEnum = pgEnum('match_status', [
+  'scheduled',
+  'live',
+  'ended',
+]);
+
 export const matches = pgTable('matches', {
   id:           serial('id').primaryKey(),
   tournamentId: integer('tournament_id')
@@ -25,6 +31,7 @@ export const matches = pgTable('matches', {
                .notNull()
                .references(() => teams.id),
   result:       matchResultEnum('result').default('pending'),
+  status:       matchStatusEnum('status').default('scheduled'),
   scheduledAt:  timestamp('scheduled_at'),
   createdAt:    timestamp('created_at').defaultNow(),
 });

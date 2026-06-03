@@ -1,0 +1,190 @@
+### Create match manually
+POST {{baseUrl}}matches
+Content-Type: application/json
+
+{
+  "tournamentId": 1,
+  "team1Id": 1,
+  "team2Id": 2,
+  "scheduledAt": "2026-06-10T10:00:00Z"
+}
+
+### Expected response
+# {
+#   "id": 1,
+#   "tournamentId": 1,
+#   "team1Id": 1,
+#   "team2Id": 2,
+#   "status": "scheduled",
+#   "result": "pending",
+#   "scheduledAt": "2026-06-10T10:00:00.000Z",
+#   "createdAt": "2026-06-04T10:00:00.000Z"
+# }
+
+###
+
+### Get match details
+GET {{baseUrl}}matches/1
+
+### Expected response
+# {
+#   "id": 1,
+#   "status": "scheduled",
+#   "result": "pending",
+#   "scheduledAt": "2026-06-10T10:00:00.000Z",
+#   "team1": { "id": 1, "name": "Tigers", "logoUrl": null },
+#   "team2": { "id": 2, "name": "Lions",  "logoUrl": null }
+# }
+
+###
+
+### Update match status (scheduled → live)
+PUT {{baseUrl}}matches/1/status
+Content-Type: application/json
+
+{
+  "status": "live"
+}
+
+### Expected response
+# { "message": "Match is now live", "status": "live" }
+
+###
+
+### Update match status (live → ended)
+PUT {{baseUrl}}matches/1/status
+Content-Type: application/json
+
+{
+  "status": "ended"
+}
+
+### Expected response
+# { "message": "Match ended", "status": "ended" }
+
+###
+
+### Set match result (only when ended)
+PUT {{baseUrl}}matches/1/result
+Content-Type: application/json
+
+{
+  "result": "team1_win"
+}
+
+### Expected response
+# {
+#   "id": 1,
+#   "result": "team1_win",
+#   "status": "ended"
+# }
+
+###
+
+### Get match summary (when live)
+GET {{baseUrl}}matches/1/summary
+
+### Expected response (live)
+# {
+#   "status": "live",
+#   "innings": 1,
+#   "score": {
+#     "runs": 87,
+#     "wickets": 3,
+#     "overs": "10.3"
+#   },
+#   "currentBatsmen": [
+#     { "id": 3, "name": "Ali",   "runs": 45, "balls": 32 },
+#     { "id": 4, "name": "Rakib", "runs": 12, "balls": 18 }
+#   ],
+#   "currentBowler": { "id": 7, "name": "Mustafiz", "overs": "3.2", "runs": 22, "wickets": 1 }
+# }
+
+### Expected response (ended)
+# {
+#   "status": "ended",
+#   "result": "team1_win",
+#   "winner": { "id": 1, "name": "Tigers" },
+#   "innings": [
+#     {
+#       "inning": 1,
+#       "team": { "id": 1, "name": "Tigers" },
+#       "score": { "runs": 156, "wickets": 7, "overs": "20.0" }
+#     },
+#     {
+#       "inning": 2,
+#       "team": { "id": 2, "name": "Lions" },
+#       "score": { "runs": 143, "wickets": 10, "overs": "19.2" }
+#     }
+#   ]
+# }
+
+###
+
+### Get full scorecard
+GET {{baseUrl}}matches/1/scorecard
+
+### Expected response
+# {
+#   "match": {
+#     "id": 1,
+#     "status": "ended",
+#     "result": "team1_win",
+#     "team1": { "id": 1, "name": "Tigers" },
+#     "team2": { "id": 2, "name": "Lions" }
+#   },
+#   "innings": [
+#     {
+#       "inning": 1,
+#       "team": { "id": 1, "name": "Tigers" },
+#       "score": { "runs": 156, "wickets": 7, "overs": "20.0", "extras": 8 },
+#       "batting": [
+#         {
+#           "batsman": { "id": 3, "name": "Ali" },
+#           "runs": 45,
+#           "balls": 32,
+#           "fours": 4,
+#           "sixes": 2,
+#           "strikeRate": 140.6,
+#           "howOut": "c Mushfiq b Miraz",
+#           "dismissedBy": { "bowler": "Miraz", "fielder": "Mushfiq" }
+#         },
+#         {
+#           "batsman": { "id": 5, "name": "Hasan" },
+#           "runs": 0,
+#           "balls": 0,
+#           "fours": 0,
+#           "sixes": 0,
+#           "strikeRate": 0,
+#           "howOut": "not out",
+#           "dismissedBy": null
+#         }
+#       ],
+#       "bowling": [
+#         {
+#           "bowler": { "id": 7, "name": "Mustafiz" },
+#           "overs": "4.0",
+#           "maidens": 0,
+#           "runs": 28,
+#           "wickets": 2,
+#           "economy": 7.0
+#         },
+#         {
+#           "bowler": { "id": 8, "name": "Miraz" },
+#           "overs": "4.0",
+#           "maidens": 1,
+#           "runs": 22,
+#           "wickets": 1,
+#           "economy": 5.5
+#         }
+#       ]
+#     },
+#     {
+#       "inning": 2,
+#       "team": { "id": 2, "name": "Lions" },
+#       "score": { "runs": 143, "wickets": 10, "overs": "19.2", "extras": 6 },
+#       "batting": [ ],
+#       "bowling": [ ]
+#     }
+#   ]
+# }

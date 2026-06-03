@@ -1,0 +1,112 @@
+### Insert a delivery (live scoring)
+POST {{baseUrl}}/matches/1/deliveries
+Content-Type: application/json
+
+{
+  "inning": 1,
+  "over": 0,
+  "ball": 1,
+  "strikerId": 3,
+  "nonStrikerId": 4,
+  "bowlerId": 7,
+  "runsFromBat": 4,
+  "extraRuns": 0,
+  "extraType": "none",
+  "isLegalBall": true,
+  "commentary": "Driven through covers for four!"
+}
+
+### Expected response
+# {
+#   "id": 1,
+#   "matchId": 1,
+#   "deliveryNumber": 1,
+#   "inning": 1,
+#   "over": 0,
+#   "ball": 1,
+#   "strikerId": 3,
+#   "nonStrikerId": 4,
+#   "bowlerId": 7,
+#   "runsFromBat": 4,
+#   "extraRuns": 0,
+#   "extraType": "none",
+#   "isLegalBall": true,
+#   "isWicket": false,
+#   "commentary": "Driven through covers for four!",
+#   "timestamp": "2026-06-04T10:05:00.000Z"
+# }
+
+###
+
+### Insert a wide ball
+POST {{baseUrl}}/matches/1/deliveries
+Content-Type: application/json
+
+{
+  "inning": 1,
+  "over": 0,
+  "ball": 1,
+  "strikerId": 3,
+  "nonStrikerId": 4,
+  "bowlerId": 7,
+  "runsFromBat": 0,
+  "extraRuns": 1,
+  "extraType": "wide",
+  "isLegalBall": false
+}
+
+### Expected response
+# {
+#   "id": 2,
+#   "deliveryNumber": 2,
+#   "over": 0,
+#   "ball": 1,        ← ball number stays same (wide doesn't count)
+#   "isLegalBall": false,
+#   "extraType": "wide",
+#   "extraRuns": 1
+# }
+
+###
+
+### Insert a wicket delivery
+POST {{baseUrl}}/matches/1/deliveries
+Content-Type: application/json
+
+{
+  "inning": 1,
+  "over": 0,
+  "ball": 2,
+  "strikerId": 3,
+  "nonStrikerId": 4,
+  "bowlerId": 7,
+  "runsFromBat": 0,
+  "extraRuns": 0,
+  "extraType": "none",
+  "isLegalBall": true,
+  "isWicket": true,
+  "wicketType": "caught",
+  "playerDismissedId": 3,
+  "fielderId": 9,
+  "nextBatterId": 5,
+  "commentary": "Caught at mid off!"
+}
+
+### Expected response
+# {
+#   "id": 3,
+#   "deliveryNumber": 3,
+#   "isWicket": true,
+#   "wicketType": "caught",
+#   "playerDismissedId": 3,
+#   "fielderId": 9,
+#   "nextBatterId": 5,
+#   "commentary": "Caught at mid off!"
+# }
+
+###
+
+### Undo last delivery (delete last ball)
+DELETE {{baseUrl}}/matches/1/deliveries/last
+
+### Expected response
+# { "message": "Last delivery removed", "deletedId": 3 }
