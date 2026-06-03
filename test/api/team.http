@@ -1,0 +1,36 @@
+### Create team
+POST {{baseUrl}}teams
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Tigers",
+  "location": "Dhaka",
+  "bio": "Best team in the league"
+}
+
+### Get team by id
+GET {{baseUrl}}teams/1
+
+### Get my teams
+GET {{baseUrl}}teams/my
+Authorization: Bearer {{accessToken}}
+
+### Add player to team
+POST {{baseUrl}}teams/1/players
+Content-Type: application/json
+
+{
+  "playerId": 2
+}
+
+### Remove player from team
+DELETE {{baseUrl}}teams/1/players/2
+
+### Assign captain
+PUT {{baseUrl}}teams/1/captain
+Content-Type: application/json
+
+{
+  "playerId": 1
+}

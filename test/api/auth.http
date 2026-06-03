@@ -6,7 +6,7 @@ POST {{baseUrl}}auth/register
 Content-Type: application/json
 
 {
-  "username": "batmannow",
+  "username": "teammannow",
   "password": "password123",
   "role": "player"
 }
@@ -16,6 +16,6 @@ POST {{baseUrl}}auth/login
 Content-Type: application/json
 
 {
-  "username": "batmannow",
+  "username": "teammannow",
   "password": "password123"
 }
