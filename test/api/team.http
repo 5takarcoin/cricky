@@ -19,16 +19,19 @@ Authorization: Bearer {{accessToken}}
 ### Add player to team
 POST {{baseUrl}}teams/1/players
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "playerId": 2
+  "playerId": 1
 }
 
 ### Remove player from team
 DELETE {{baseUrl}}teams/1/players/2
+Authorization: Bearer {{accessToken}}
 
 ### Assign captain
 PUT {{baseUrl}}teams/1/captain
+Authorization: Bearer {{accessToken}}
 Content-Type: application/json
 
 {

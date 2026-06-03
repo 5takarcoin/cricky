@@ -1,0 +1,53 @@
+### Create tournament
+POST {{baseUrl}}tournaments
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Dhaka Premier League",
+  "venue": "Mirpur Stadium",
+  "overs": 20,
+  "type": "application",
+  "description": "Best tournament in Dhaka"
+}
+
+### List all tournaments
+GET {{baseUrl}}tournaments
+
+### Get tournament by id
+GET {{baseUrl}}tournaments/1
+
+### Apply to tournament
+POST {{baseUrl}}tournaments/1/apply
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "teamId": 1
+}
+
+### Invite team
+POST {{baseUrl}}tournaments/1/invite/1
+Authorization: Bearer {{accessToken}}
+
+### Approve team
+PUT {{baseUrl}}tournaments/1/teams/1
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "status": "confirmed"
+}
+
+### Add manager
+POST {{baseUrl}}tournaments/1/managers
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "playerId": 1
+}
+
+### Remove manager
+DELETE {{baseUrl}}tournaments/1/managers/1
+Authorization: Bearer {{accessToken}}
