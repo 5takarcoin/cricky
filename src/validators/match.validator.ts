@@ -10,7 +10,33 @@ export const createMatchSchema = z.object({
 });
 
 export const updateStatusSchema = z.object({
-  status: z.enum(['scheduled', 'live', 'ended']),
+  status: z.enum(['live', 'ended']),
+});
+
+const wicketTypes = [
+  'bowled', 'caught', 'lbw', 'run_out', 'stumped',
+  'hit_wicket', 'obstructing', 'timed_out', 'handled_ball',
+] as const;
+
+export const createDeliverySchema = z.object({
+  inning:         z.number().int().min(1).max(2),
+  over:           z.number().int().min(0).optional(),
+  ball:           z.number().int().min(1).max(6).optional(),
+  strikerId:      z.number().int(),
+  nonStrikerId:   z.number().int(),
+  bowlerId:       z.number().int(),
+  runsFromBat:    z.number().int().min(0).default(0),
+  extraRuns:      z.number().int().min(0).default(0),
+  extraType:      z.enum(['none', 'wide', 'no_ball', 'bye', 'leg_bye', 'penalty']).default('none'),
+  isLegalBall:    z.boolean().default(true),
+  isWicket:       z.boolean().optional(),
+  wicketType:     z.enum(wicketTypes).optional(),
+  playerDismissedId: z.number().int().optional(),
+  fielderId:      z.number().int().optional(),
+  nextBatterId:   z.number().int().optional(),
+  commentary:     z.string().max(500).optional(),
+}).refine(d => !d.isWicket || d.wicketType, {
+  message: 'wicketType is required when isWicket is true',
 });
 
 export const updateResultSchema = z.object({

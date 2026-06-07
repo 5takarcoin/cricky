@@ -150,7 +150,7 @@ router.get('/tournaments/:id/fixtures',
         return { ...f, team1, team2, status: match.status, result: match.result };
       }));
 
-      res.json(enriched);
+      res.json(enriched.filter(Boolean));
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Failed to fetch fixtures' });
@@ -187,11 +187,29 @@ router.put('/fixtures/:id',
         return;
       }
 
-      const [updated] = await db
-        .update(fixtures)
-        .set(req.body)
-        .where(eq(fixtures.id, fixtureId))
-        .returning();
+      const { scheduledAt, venue } = req.body;
+      const fixtureUpdates: { scheduledAt?: Date; venue?: string } = {};
+      if (venue !== undefined) fixtureUpdates.venue = venue;
+      if (scheduledAt !== undefined) fixtureUpdates.scheduledAt = new Date(scheduledAt);
+
+      const [updated] = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(fixtures)
+          .set(fixtureUpdates)
+          .where(eq(fixtures.id, fixtureId))
+          .returning();
+
+        if (!row) throw new Error('Fixture update failed');
+
+        if (scheduledAt !== undefined) {
+          await tx
+            .update(matches)
+            .set({ scheduledAt: new Date(scheduledAt) })
+            .where(eq(matches.id, row.matchId));
+        }
+
+        return [row];
+      });
 
       res.json(updated);
     } catch (err) {

@@ -1,5 +1,5 @@
 ### Auto generate round robin fixtures
-POST {{baseUrl}}/tournaments/1/fixtures/generate
+POST {{baseUrl}}tournaments/1/fixtures/generate
 Content-Type: application/json
 
 {
@@ -23,7 +23,7 @@ Content-Type: application/json
 ###
 
 ### Get all fixtures in tournament
-GET {{baseUrl}}/tournaments/1/fixtures
+GET {{baseUrl}}tournaments/1/fixtures
 
 ### Expected response
 # [
@@ -48,7 +48,7 @@ GET {{baseUrl}}/tournaments/1/fixtures
 ###
 
 ### Update fixture schedule (reschedule)
-PUT {{baseUrl}}/fixtures/1
+PUT {{baseUrl}}fixtures/1
 Content-Type: application/json
 
 {

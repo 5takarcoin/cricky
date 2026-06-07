@@ -7,6 +7,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsc && node dist/index.js",
+    "dev:client": "npm run dev --prefix client",
+    "build:client": "npm run build --prefix client",
     "db:generate": "npx drizzle-kit generate",
     "db:migrate": "npx drizzle-kit migrate",
     "db:gm": "drizzle-kit generate && drizzle-kit migrate"
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.1",
     "drizzle-kit": "^0.31.10",
@@ -27,6 +30,7 @@
     "@types/pg": "^8.20.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "express": "^5.2.1",

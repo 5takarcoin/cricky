@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-pitch: #0f3d2e;
+  --color-pitch-light: #1a5c45;
+  --color-pitch-dark: #082a1f;
+  --color-gold: #d4a853;
+  --color-gold-light: #e8c47a;
+  --color-cream: #f8f5f0;
+  --color-cream-dark: #ebe6dc;
+}
+
+body {
+  @apply bg-cream text-pitch-dark font-sans antialiased min-h-screen;
+}

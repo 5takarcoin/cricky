@@ -23,7 +23,7 @@ export const getDeliveries = async (matchId: number) => {
 export const calcInningsScore = (dels: any[], inning: number) => {
   const inningDels = dels.filter(d => d.inning === inning);
   const runs       = inningDels.reduce((sum, d) => sum + d.runsFromBat + d.extraRuns, 0);
-  const wickets    = inningDels.filter(d => d.isWicket).length;
+  const wickets    = inningDels.filter(d => d.wicketType !== null).length;
   const legalBalls = inningDels.filter(d => d.isLegalBall).length;
   const extras     = inningDels.reduce((sum, d) => sum + d.extraRuns, 0);
 
@@ -95,7 +95,7 @@ export const calcBowlingFigures = async (dels: any[], inning: number) => {
     const bowlerDels  = inningDels.filter(d => d.bowlerId === bowlerId);
     const legalBalls  = bowlerDels.filter(d => d.isLegalBall).length;
     const runs        = bowlerDels.reduce((sum, d) => sum + d.runsFromBat + d.extraRuns, 0);
-    const wickets     = bowlerDels.filter(d => d.isWicket).length;
+    const wickets     = bowlerDels.filter(d => d.wicketType !== null).length;
     const overs       = formatOvers(legalBalls);
     const economy     = legalBalls > 0 ? Number(((runs / legalBalls) * 6).toFixed(1)) : 0;
 

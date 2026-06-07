@@ -8,15 +8,14 @@ import { tournamentTeams } from '../db/schema/tournamentTeams.js';
 import { fixtures } from '../db/schema/fixtures.js';
 import { players } from '../db/schema/players.js';
 import { deliveries } from '../db/schema/deliveries.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { requireAuth } from '../middleware/requireAuth.js';
 import { validate } from '../middleware/validate.js';
 import {
   createMatchSchema,
   updateStatusSchema,
   updateResultSchema,
-  generateFixturesSchema,
-  updateFixtureSchema,
+  createDeliverySchema,
 } from '../validators/match.validator.js';
 import {
   getDeliveries,
@@ -25,6 +24,11 @@ import {
   calcBowlingFigures,
   formatOvers,
 } from '../lib/scorecard.js';
+import {
+  getNextBallPosition,
+  isInningsComplete,
+  buildDeliveryResponse,
+} from '../lib/delivery.js';
 import type { AuthenticatedRequest } from '../types/authTypes.js';
 
 const router = Router();
@@ -88,10 +92,24 @@ router.post('/',
         return;
       }
 
-      const [match] = await db
-        .insert(matches)
-        .values({ tournamentId, team1Id, team2Id, scheduledAt })
-        .returning();
+      const scheduled = scheduledAt ? new Date(scheduledAt) : new Date();
+
+      const [match] = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(matches)
+          .values({ tournamentId, team1Id, team2Id, scheduledAt: scheduledAt ? scheduled : undefined })
+          .returning();
+
+        if (!created) throw new Error('Failed to create match');
+
+        await tx.insert(fixtures).values({
+          tournamentId,
+          matchId:     created.id,
+          scheduledAt: scheduled,
+        });
+
+        return [created];
+      });
 
       res.status(201).json(match);
     } catch (err) {
@@ -266,41 +284,66 @@ router.get('/:id/summary',
 
       // if live — show current innings summary
       if (match.status === 'live') {
-        const lastDel     = dels[dels.length - 1];
+        const [team1] = await db.select({ id: teams.id, name: teams.name }).from(teams).where(eq(teams.id, match.team1Id));
+        const [team2] = await db.select({ id: teams.id, name: teams.name }).from(teams).where(eq(teams.id, match.team2Id));
+
+        const lastDel       = dels[dels.length - 1];
         const currentInning = lastDel?.inning ?? 1;
-        const score       = calcInningsScore(dels, currentInning);
+        const score         = calcInningsScore(dels, currentInning);
 
-        // current batsmen = striker + non striker of last delivery
+        const innings = [1, 2].map((inning) => {
+          const innDels = dels.filter(d => d.inning === inning);
+          if (innDels.length === 0 && inning !== currentInning) return null;
+          return {
+            inning,
+            team:   inning === 1 ? team1 : team2,
+            score:  calcInningsScore(dels, inning),
+            isLive: inning === currentInning,
+          };
+        }).filter(Boolean);
+
+        if (!lastDel) {
+          res.json({
+            status:         'live',
+            inning:         currentInning,
+            team1, team2,
+            score,
+            innings,
+            currentBatsmen: [],
+            currentBowler:  null,
+          });
+          return;
+        }
+
         const [striker]    = await db.select({ id: players.id, name: players.name })
-          .from(players).where(eq(players.id, lastDel?.strikerId ?? 0 as number));
+          .from(players).where(eq(players.id, lastDel.strikerId!));
         const [nonStriker] = await db.select({ id: players.id, name: players.name })
-          .from(players).where(eq(players.id, lastDel?.nonStrikerId ?? 0 as number));
+          .from(players).where(eq(players.id, lastDel.nonStrikerId!));
         const [bowler]     = await db.select({ id: players.id, name: players.name })
-          .from(players).where(eq(players.id, lastDel?.bowlerId ?? 0 as number));
+          .from(players).where(eq(players.id, lastDel.bowlerId!));
 
-        // current bowler stats this spell
-        const bowlerDels   = dels.filter(d => d.inning === currentInning && d.bowlerId === lastDel?.bowlerId);
+        const bowlerDels   = dels.filter(d => d.inning === currentInning && d.bowlerId === lastDel.bowlerId);
         const bowlerRuns   = bowlerDels.reduce((sum, d) => sum + d.runsFromBat + d.extraRuns, 0);
         const bowlerBalls  = bowlerDels.filter(d => d.isLegalBall).length;
         const bowlerWickets = bowlerDels.filter(d => d.wicketType !== null).length;
 
-        // current striker stats
-        const strikerDels  = dels.filter(d => d.inning === currentInning && d.strikerId === lastDel?.strikerId);
+        const strikerDels  = dels.filter(d => d.inning === currentInning && d.strikerId === lastDel.strikerId);
         const strikerRuns  = strikerDels.reduce((sum, d) => sum + d.runsFromBat, 0);
         const strikerBalls = strikerDels.filter(d => d.isLegalBall).length;
 
-        // non striker stats
-        const nonStrikerDels  = dels.filter(d => d.inning === currentInning && d.strikerId === lastDel?.nonStrikerId);
+        const nonStrikerDels  = dels.filter(d => d.inning === currentInning && d.strikerId === lastDel.nonStrikerId);
         const nonStrikerRuns  = nonStrikerDels.reduce((sum, d) => sum + d.runsFromBat, 0);
         const nonStrikerBalls = nonStrikerDels.filter(d => d.isLegalBall).length;
 
         res.json({
           status: 'live',
           inning: currentInning,
+          team1, team2,
           score,
+          innings,
           currentBatsmen: [
-            { ...striker,    runs: strikerRuns,    balls: strikerBalls },
-            { ...nonStriker, runs: nonStrikerRuns, balls: nonStrikerBalls },
+            { ...striker,    runs: strikerRuns,    balls: strikerBalls, isStriker: true },
+            { ...nonStriker, runs: nonStrikerRuns, balls: nonStrikerBalls, isStriker: false },
           ],
           currentBowler: {
             ...bowler,
@@ -389,6 +432,168 @@ router.get('/:id/scorecard',
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Failed to fetch scorecard' });
+    }
+  }
+);
+
+// ─── RECORD DELIVERY ──────────────────────────────────────
+router.post('/:id/deliveries',
+  requireAuth,
+  validate(createDeliverySchema),
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const matchId = Number(req.params.id);
+      const player  = await getPlayer(req.user!.id);
+
+      if (!player) {
+        res.status(403).json({ error: 'Player profile not found' });
+        return;
+      }
+
+      const [match] = await db
+        .select()
+        .from(matches)
+        .where(eq(matches.id, matchId));
+
+      if (!match) {
+        res.status(404).json({ error: 'Match not found' });
+        return;
+      }
+
+      if (match.status !== 'live') {
+        res.status(400).json({ error: 'Match must be live to record deliveries' });
+        return;
+      }
+
+      if (!(await isManager(match.tournamentId, player.id))) {
+        res.status(403).json({ error: 'Only managers can score' });
+        return;
+      }
+
+      const [tournament] = await db
+        .select({ overs: tournaments.overs })
+        .from(tournaments)
+        .where(eq(tournaments.id, match.tournamentId));
+
+      const maxOvers = tournament?.overs ?? 20;
+      const existingDels = await getDeliveries(matchId);
+
+      const {
+        inning,
+        strikerId, nonStrikerId, bowlerId,
+        runsFromBat, extraRuns, extraType, isLegalBall,
+        wicketType, playerDismissedId, fielderId, nextBatterId,
+        commentary,
+      } = req.body;
+
+      if (inning === 2 && !isInningsComplete(existingDels, 1, maxOvers)) {
+        res.status(400).json({ error: 'Innings 1 is not complete yet' });
+        return;
+      }
+
+      if (isInningsComplete(existingDels, inning, maxOvers)) {
+        const innScore = calcInningsScore(existingDels, inning);
+        const msg = innScore.wickets >= 10 ? 'All wickets down' : 'Overs complete';
+        res.status(400).json({ error: msg });
+        return;
+      }
+
+      const { over, ball } = getNextBallPosition(existingDels, inning);
+
+      const [lastNum] = await db
+        .select({ deliveryNumber: deliveries.deliveryNumber })
+        .from(deliveries)
+        .where(eq(deliveries.matchId, matchId))
+        .orderBy(desc(deliveries.deliveryNumber))
+        .limit(1);
+
+      const deliveryNumber = (lastNum?.deliveryNumber ?? 0) + 1;
+
+      const [delivery] = await db
+        .insert(deliveries)
+        .values({
+          matchId,
+          deliveryNumber,
+          inning, over, ball,
+          strikerId, nonStrikerId, bowlerId,
+          runsFromBat, extraRuns, extraType, isLegalBall,
+          wicketType:        wicketType ?? null,
+          playerDismissedId: playerDismissedId ?? null,
+          fielderId:         fielderId ?? null,
+          nextBatterId:      nextBatterId ?? null,
+          commentary:        commentary ?? null,
+        })
+        .returning();
+
+      if (!delivery) throw new Error('Insert did not return delivery');
+
+      const allDels = await getDeliveries(matchId);
+      const { inningsOver, matchEnded, currentScore } = buildDeliveryResponse(allDels, inning, maxOvers);
+
+      res.status(201).json({
+        delivery: { ...delivery, isWicket: delivery.wicketType !== null },
+        inningsOver,
+        matchEnded,
+        currentScore,
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Failed to record delivery' });
+    }
+  }
+);
+
+// ─── UNDO LAST DELIVERY ───────────────────────────────────
+router.delete('/:id/deliveries/last',
+  requireAuth,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const matchId = Number(req.params.id);
+      const player  = await getPlayer(req.user!.id);
+
+      if (!player) {
+        res.status(403).json({ error: 'Player profile not found' });
+        return;
+      }
+
+      const [match] = await db
+        .select()
+        .from(matches)
+        .where(eq(matches.id, matchId));
+
+      if (!match) {
+        res.status(404).json({ error: 'Match not found' });
+        return;
+      }
+
+      if (match.status !== 'live') {
+        res.status(400).json({ error: 'Match must be live to undo deliveries' });
+        return;
+      }
+
+      if (!(await isManager(match.tournamentId, player.id))) {
+        res.status(403).json({ error: 'Only managers can undo deliveries' });
+        return;
+      }
+
+      const [lastDel] = await db
+        .select()
+        .from(deliveries)
+        .where(eq(deliveries.matchId, matchId))
+        .orderBy(desc(deliveries.deliveryNumber))
+        .limit(1);
+
+      if (!lastDel) {
+        res.status(404).json({ error: 'No deliveries to remove' });
+        return;
+      }
+
+      await db.delete(deliveries).where(eq(deliveries.id, lastDel.id));
+
+      res.json({ message: 'Last delivery removed', deletedId: lastDel.id });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Failed to remove delivery' });
     }
   }
 );

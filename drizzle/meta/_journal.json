@@ -15,6 +15,13 @@
       "when": 1780344394437,
       "tag": "0001_third_miss_america",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780707816358,
+      "tag": "0002_right_vertigo",
+      "breakpoints": true
     }
   ]
 }

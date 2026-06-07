@@ -30,10 +30,21 @@ router.post('/',
         return;
       }
 
-      const [team] = await db
-        .insert(teams)
-        .values({ ...req.body, createdBy: player.id })
-        .returning();
+      const [team] = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(teams)
+          .values({ ...req.body, createdBy: player.id })
+          .returning();
+
+        if (!created) throw new Error('Failed to create team');
+
+        await tx.insert(playerTeams).values({
+          teamId:   created.id,
+          playerId: player.id,
+        });
+
+        return [created];
+      });
 
       res.status(201).json(team);
     } catch (err) {

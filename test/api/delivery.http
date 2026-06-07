@@ -1,5 +1,5 @@
 ### Insert a delivery (live scoring)
-POST {{baseUrl}}/matches/1/deliveries
+POST {{baseUrl}}matches/1/deliveries
 Content-Type: application/json
 
 {
@@ -39,7 +39,7 @@ Content-Type: application/json
 ###
 
 ### Insert a wide ball
-POST {{baseUrl}}/matches/1/deliveries
+POST {{baseUrl}}matches/1/deliveries
 Content-Type: application/json
 
 {
@@ -69,7 +69,7 @@ Content-Type: application/json
 ###
 
 ### Insert a wicket delivery
-POST {{baseUrl}}/matches/1/deliveries
+POST {{baseUrl}}matches/1/deliveries
 Content-Type: application/json
 
 {
@@ -106,7 +106,7 @@ Content-Type: application/json
 ###
 
 ### Undo last delivery (delete last ball)
-DELETE {{baseUrl}}/matches/1/deliveries/last
+DELETE {{baseUrl}}matches/1/deliveries/last
 
 ### Expected response
 # { "message": "Last delivery removed", "deletedId": 3 }
